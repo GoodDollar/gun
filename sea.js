@@ -1,10 +1,12 @@
+const mycons = console;
+console.log("SEA-TEST");
 ;(function(){
   /* UNBUILD */
   var root;
   if(typeof window !== "undefined"){ root = window }
   if(typeof global !== "undefined"){ root = global }
   root = root || {};
-  var console = root.console || {log: function(){}};
+  var console = root.console || mycons || {log: function(){}};
   console.log("SEA-FIX");
   function USE(arg, req){
     return req? require(arg) : arg.slice? USE[R(arg)] : function(mod, path){
