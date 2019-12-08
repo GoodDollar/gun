@@ -698,7 +698,14 @@
     var Gun = USE('./sea').Gun;
     Gun.chain.then = function(cb){
       var gun = this, p = (new Promise(function(res, rej){
-        gun.once(res);
+        gun.once((data,key) => { 
+          if(typeof data === 'object' && data['_'] && Object.keys(data).length===1 && SEA.opt.pub(data['_']['#']) )
+          {
+            console.log("recurse sea soul", {data})
+            gun.get(data['_']['#']).once(res)
+          }
+          else res(data)
+        });
       }));
       return cb? p.then(cb) : p;
     }
@@ -1139,7 +1146,9 @@
         // if there is a request to read data from us, then...
         var soul = msg.get['#'];
         if(soul){ // for now, only allow direct IDs to be read.
-          if(typeof soul !== 'string'){ return to.next(msg) } // do not handle lexical cursors.
+          if(typeof soul !== 'string'){ 
+            console.log("lexical",{soul})
+            return to.next(msg) } // do not handle lexical cursors.
           if('alias' === soul){ // Allow reading the list of usernames/aliases in the system?
             return to.next(msg); // yes.
           } else
