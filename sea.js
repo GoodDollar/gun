@@ -1,12 +1,11 @@
 ;(function(){
-  console.log("SEA-FIX");
-
   /* UNBUILD */
   var root;
   if(typeof window !== "undefined"){ root = window }
   if(typeof global !== "undefined"){ root = global }
   root = root || {};
   var console = root.console || {log: function(){}};
+  console.log("SEA-FIX");
   function USE(arg, req){
     return req? require(arg) : arg.slice? USE[R(arg)] : function(mod, path){
       arg(mod = {exports: {}});
