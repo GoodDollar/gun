@@ -1,4 +1,5 @@
 ;(function(){
+  console.log("SEA-FIX");
 
   /* UNBUILD */
   var root;
@@ -697,8 +698,10 @@
   ;USE(function(module){
     var Gun = USE('./sea').Gun;
     Gun.chain.then = function(cb){
+      console.log("then");
       var gun = this, p = (new Promise(function(res, rej){
         gun.once((data,key) => { 
+          console.log("sea fix",data,key)
           res(data)
         });
       }));
