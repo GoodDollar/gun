@@ -699,6 +699,7 @@
     Gun.chain.then = function(cb){
       var gun = this, p = (new Promise(function(res, rej){
         gun.once((data,key) => { 
+          console.log({data,key})
           if(typeof data === 'object' && data['_'] && Object.keys(data).length===1 && SEA.opt.pub(data['_']['#']) )
           {
             console.log("recurse sea soul", {data})
