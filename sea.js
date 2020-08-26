@@ -964,7 +964,7 @@
       return gun;
     }
     User.prototype.pair = function(){
-      console.log("user.pair() IS DEPRECATED AND WILL BE DELETED!!!");
+      // console.log("user.pair() IS DEPRECATED AND WILL BE DELETED!!!");
       var user = this;
       if(!user.is){ return false }
       return user._.sea;
@@ -987,7 +987,7 @@
     }
     // If authenticated user wants to delete his/her account, let's support it!
     User.prototype.delete = async function(alias, pass, cb){
-      console.log("user.delete() IS DEPRECATED AND WILL BE MOVED TO A MODULE!!!");
+      // console.log("user.delete() IS DEPRECATED AND WILL BE MOVED TO A MODULE!!!");
       var gun = this, root = gun.back(-1), user = gun.back('user');
       try {
         user.auth(alias, pass, function(ack){
@@ -1028,7 +1028,7 @@
       return gun;
     }
     User.prototype.alive = async function(){
-      console.log("user.alive() IS DEPRECATED!!!");
+      // console.log("user.alive() IS DEPRECATED!!!");
       const gunRoot = this.back(-1)
       try {
         // All is good. Should we do something more with actual recalled data?
@@ -1057,7 +1057,7 @@
       // and return the result of that to...
     }
     User.prototype.grant = function(to, cb){
-      console.log("`.grant` API MAY BE DELETED OR CHANGED OR RENAMED, DO NOT USE!");
+      // console.log("`.grant` API MAY BE DELETED OR CHANGED OR RENAMED, DO NOT USE!");
       var gun = this, user = gun.back(-1).user(), pair = user._.sea, path = '';
       gun.back(function(at){ if(at.is){ return } path += (at.get||'') });
       (async function(){
@@ -1078,7 +1078,7 @@
       return gun;
     }
     User.prototype.secret = function(data, cb){
-      console.log("`.secret` API MAY BE DELETED OR CHANGED OR RENAMED, DO NOT USE!");
+      // console.log("`.secret` API MAY BE DELETED OR CHANGED OR RENAMED, DO NOT USE!");
       var gun = this, user = gun.back(-1).user(), pair = user.pair(), path = '';
       gun.back(function(at){ if(at.is){ return } path += (at.get||'') });
       (async function(){
