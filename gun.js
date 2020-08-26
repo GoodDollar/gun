@@ -777,7 +777,7 @@
 						setTimeout(function(){
 							ham(val, key, soul, state, msg);
 						}, to > MD? MD : to); // setTimeout Max Defer 32bit :(
-						if(!ctx.to){ root.on('in', {'@': msg['#'], err: to}) } ctx.to = 1; // TODO: This causes too many problems unless sending peers auto-retry.
+						if(!ctx.to){ root.on('in', {'@': msg['#'], warn: to}) } ctx.to = 1; // TODO: This causes too many problems unless sending peers auto-retry.
 						return to;
 					}
 					//return; // it should be this
