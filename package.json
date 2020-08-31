@@ -1,6 +1,6 @@
 {
   "name": "@gooddollar/gun",
-  "version": "0.2020.0826",
+  "version": "0.2020.0831",
   "description": "A realtime, decentralized, offline-first, graph data synchronization engine.",
   "types": "index.d.ts",
   "main": "index.js",
