@@ -562,6 +562,12 @@
     var aeskey = USE('./aeskey');
 
     SEA.decrypt = SEA.decrypt || (async (data, pair, cb, opt) => { try {
+      //dont try to decrypt null/undefined
+      if(data == null)
+      {
+        cb()
+        return;
+      }
       opt = opt || {};
       var key = (pair||opt).epriv || pair;
       if(!key){
