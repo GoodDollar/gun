@@ -565,7 +565,7 @@
       //dont try to decrypt null/undefined
       if(data == null)
       {
-        cb()
+        cb && cb()
         return;
       }
       opt = opt || {};
