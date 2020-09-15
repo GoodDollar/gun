@@ -1201,7 +1201,7 @@
       if((msg._||'').faith && (at.opt||'').faith && 'function' == typeof msg._){
         SEA.opt.pack(put, function(raw){
         SEA.verify(raw, false, function(data){ // this is synchronous if false
-          if(u === data) console.log("check: verify undefined", {msg})
+          // if(u === data) console.log("check: verify undefined", {msg})
           put['='] = SEA.opt.unpack(data);
           eve.to.next(msg);
         })})
