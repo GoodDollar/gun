@@ -1091,7 +1091,7 @@
       gun.back(function(at){ if(at.is){ return } path += (at.get||'') });
       (async function(){
       var enc, sec = await user.get('trust').get(pair.pub).get(path).then();
-      sec = await SEA.decrypt(sec, pair);
+      sec = sec && await SEA.decrypt(sec, pair);
       if(!sec){
         sec = SEA.random(16).toString();
         enc = await SEA.encrypt(sec, pair);
@@ -1186,6 +1186,7 @@
         if(!SEA.opt.check(val)){ return }
         c++; // for each property on the node
         SEA.verify(val, false, function(data){ c--; // false just extracts the plain data.
+          if(u === data) console.log("each: verify undefined", {msg})
           node[key] = SEA.opt.unpack(data, key, node);; // transform to plain value.
           if(d && !c && (c = -1)){ to.next(msg) }
         });
@@ -1209,6 +1210,7 @@
       if(!soul || !key){ return }
       if((msg._||'').faith && (at.opt||'').faith && 'function' == typeof msg._){
         SEA.verify(SEA.opt.pack(put), false, function(data){ // this is synchronous if false
+          if(u === data) console.log("check: verify undefined", {msg})
           put['='] = SEA.opt.unpack(data);
           eve.to.next(msg);
         });
@@ -1274,7 +1276,9 @@
       }
       SEA.verify(SEA.opt.pack(msg.put), pub, function(data){ var tmp;
         data = SEA.opt.unpack(data);
-        if(u === data){ return no("Unverified data.") } // make sure the signature matches the account it claims to be on. // reject any updates that are signed with a mismatched account.
+        if(u === data){ 
+          console.log("check.pub: verify undefined", {msg})
+          return no("Unverified data.") } // make sure the signature matches the account it claims to be on. // reject any updates that are signed with a mismatched account.
         if((tmp = link_is(data)) && pub === SEA.opt.pub(tmp)){ (at.sea.own[tmp] = at.sea.own[tmp] || {})[pub] = 1 }
         msg.put['='] = data;
         eve.to.next(msg);
@@ -1373,6 +1377,7 @@
           SEA.verify(SEA.opt.pack(val,key,node,soul), pub, function(data){ var rel, tmp;
             data = SEA.opt.unpack(data, key, node);
             if(u === data){ // make sure the signature matches the account it claims to be on.
+              console.log("each.pub: verify undefined", {msg, packed: SEA.opt.pack(val,key,node,soul)})
               return each.end({err: "Unverified data."}); // reject any updates that are signed with a mismatched account.
             }
             if((rel = Gun.val.link.is(data)) && pub === SEA.opt.pub(rel)){
@@ -1418,7 +1423,9 @@
           check['any'+soul+key] = 1;
           SEA.verify(SEA.opt.pack(val,key,node,soul), pub, function(data){ var rel;
             data = SEA.opt.unpack(data, key, node);
-            if(u === data){ return each.end({err: "Mismatched owner on '" + key + "'."}) } // thanks @rogowski !
+            if(u === data){ 
+              console.log("each.any: verify undefined", {msg, packed: SEA.opt.pack(val,key,node,soul)})
+              return each.end({err: "Mismatched owner on '" + key + "'."}) } // thanks @rogowski !
             if((rel = Gun.val.link.is(data)) && pub === SEA.opt.pub(rel)){
               (at.sea.own[rel] = at.sea.own[rel] || {})[pub] = true;
             }
