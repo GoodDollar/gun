@@ -1210,7 +1210,7 @@
       if(!soul || !key){ return }
       if((msg._||'').faith && (at.opt||'').faith && 'function' == typeof msg._){
         SEA.verify(SEA.opt.pack(put), false, function(data){ // this is synchronous if false
-          if(u === data) console.log("check: verify undefined", {msg})
+          // if(u === data) console.log("check: verify undefined", {msg})
           put['='] = SEA.opt.unpack(data);
           eve.to.next(msg);
         });
