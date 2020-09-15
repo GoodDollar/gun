@@ -1113,7 +1113,7 @@
       gun.back(function(at){ if(at.is){ return } path += (at.get||'') });
       (async function(){
       var enc, sec = await user.get('trust').get(pair.pub).get(path).then();
-      sec = await SEA.decrypt(sec, pair);
+      sec = sec && await SEA.decrypt(sec, pair);
       if(!sec){
         sec = SEA.random(16).toString();
         enc = await SEA.encrypt(sec, pair);
@@ -1201,6 +1201,7 @@
       if((msg._||'').faith && (at.opt||'').faith && 'function' == typeof msg._){
         SEA.opt.pack(put, function(raw){
         SEA.verify(raw, false, function(data){ // this is synchronous if false
+          if(u === data) console.log("check: verify undefined", {msg})
           put['='] = SEA.opt.unpack(data);
           eve.to.next(msg);
         })})
@@ -1272,7 +1273,9 @@
       SEA.opt.pack(msg.put, function(raw){
       SEA.verify(raw, pub, function(data){ var tmp;
         data = SEA.opt.unpack(data);
-        if(u === data){ return no("Unverified data.") } // make sure the signature matches the account it claims to be on. // reject any updates that are signed with a mismatched account.
+        if(u === data){ 
+          console.log("check.pub: verify undefined", {msg})
+          return no("Unverified data.") } // make sure the signature matches the account it claims to be on. // reject any updates that are signed with a mismatched account.
         if((tmp = link_is(data)) && pub === SEA.opt.pub(tmp)){ (at.sea.own[tmp] = at.sea.own[tmp] || {})[pub] = 1 }
         msg.put['='] = data;
         eve.to.next(msg);
