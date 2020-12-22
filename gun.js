@@ -189,20 +189,21 @@
 			}
 			var dt = dup.track = function(id){
 				var it = s[id] || (s[id] = {});
-				it.was = dup.now = +new Date;
 				if(it.was) delete incoming[it.idx];
+				it.was = dup.now = +new Date;
 				it.idx = incoming.push(id) - 1;
 				if(!dup.to){ dup.to = setTimeout(dup.drop, opt.age + 9) }
 				return it;
 			}
 			dup.drop = function(age){
 				var i, it;
+				var before = incoming.length;
 				for(i = 0; i < incoming.length; i++)
 				{
 					if(incoming[i] && (it = s[incoming[i]]) && (age || opt.age) > (dup.now - it.was)){ break; } //everything further is newer
 				}
 				toevict = incoming.splice(0,i)
-				console.log("dup evict",{i, total: incoming.length});
+				console.log("dup evict",{i, before, after: incoming.length, toevict: toevict.length, next:s[incoming[0]]});
 				dup.to = null;
 				dup.now = +new Date;
 				setTimeout.each(toevict, function(id){ 
