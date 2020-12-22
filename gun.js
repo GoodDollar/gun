@@ -196,14 +196,15 @@
 				return it;
 			}
 			dup.drop = function(age){
-				var i, it;
+				var i;
 				var before = incoming.length;
 				for(i = 0; i < incoming.length; i++)
 				{
-					if(incoming[i] && (it = s[incoming[i]]) && (age || opt.age) > (dup.now - it.was)){ break; } //everything further is newer
+					var it = incoming[i] && s[incoming[i]];
+					if(it && (age || opt.age) > (dup.now - it.was)){ break; } //everything further is newer
 				}
 				toevict = incoming.splice(0,i)
-				console.log("dup evict",{i, before, after: incoming.length, toevict: toevict.length, next:s[incoming[0]]});
+				console.log("dup evict",{i, before, after: incoming.length, toevict: toevict.length,nextId:incoming[0], next:s[incoming[0]]});
 				dup.to = null;
 				dup.now = +new Date;
 				setTimeout.each(toevict, function(id){ 
