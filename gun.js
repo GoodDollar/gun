@@ -196,11 +196,11 @@
 				return it;
 			}
 			dup.drop = function(age){
-				var i;
+				var i, it;
 				for(i = 0; i < incoming.length; i++)
 				{
-					if(incoming[i] && s[incoming[i]] && (age || opt.age) > (dup.now - it.was)){ break; } //everything further is newer
-				}
+					if(incoming[i] && (it = s[incoming[i]]) && (age || opt.age) > (dup.now - it.was)){ break; } //everything further is newer
+				})
 				toevict = incoming.splice(0,i)
 				console.log("dup evict",{i, total: incoming.length});
 				dup.to = null;
