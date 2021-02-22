@@ -1162,7 +1162,7 @@
 				if(!raw){ return }
 				if(opt.pack <= raw.length){ return mesh.say({dam: '!', err: "Message too big!"}, peer) }
 				if(mesh === this){
-					if('string' == typeof raw){ try{
+					if(hear.c % 10000 ===0 && 'string' == typeof raw){ try{
 						var stat = console.STAT || {};
 						//console.log('HEAR:', peer.id, (raw||'').slice(0,250), ((raw||'').length / 1024 / 1024).toFixed(4));
 						
