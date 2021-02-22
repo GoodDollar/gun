@@ -201,15 +201,17 @@
 				for(i = 0; i < incoming.length; i++)
 				{
 					var it = incoming[i] && s[incoming[i]];
+					if(i>50000) break;
 					if(it && (age || opt.age) > (Date.now() - it.was)){ break; } //everything further is newer
 				}
 				toevict = incoming.splice(0,i)
 				console.log("dup evict",{i, before, after: incoming.length, toevict: toevict.length,nextId:incoming[0], next:s[incoming[0]]});
 				dup.to = null;
 				dup.now = Date.now();
-				setTimeout.each(toevict, function(id){ 
-					id && delete s[id];
-				},0,99);
+				// setTimeout.each(toevict, function(id){ 
+				// 	id && delete s[id];
+				// },0,99);
+				toevict.forEach(id => id && delete s[id])
 			}
 			return dup;
 		}
