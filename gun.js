@@ -182,7 +182,7 @@
 		USE('./shim');
 		function Dup(opt){
 			var dup = {s:{},incoming:[]}, s = dup.s, incoming = dup.incoming;
-			opt = opt || {max: 999, age: /*1000 * 9};//*/ 1000 * 9 * 3};
+			opt = opt || {max: 999, age: /*1000 * 9};//*/ 1000 * 5};
 			dup.check = function(id){
 				if(!s[id]){ return false }
 				return dt(id);
@@ -190,7 +190,7 @@
 			var dt = dup.track = function(id){
 				var it = s[id] || (s[id] = {});
 				if(it.was) delete incoming[it.idx];
-				it.was = dup.now = +new Date;
+				it.was = dup.now = Date.now();
 				it.idx = incoming.push(id) - 1;
 				if(!dup.to){ dup.to = setTimeout(dup.drop, opt.age + 9) }
 				return it;
@@ -201,12 +201,12 @@
 				for(i = 0; i < incoming.length; i++)
 				{
 					var it = incoming[i] && s[incoming[i]];
-					if(it && (age || opt.age) > (dup.now - it.was)){ break; } //everything further is newer
+					if(it && (age || opt.age) > (Date.now() - it.was)){ break; } //everything further is newer
 				}
 				toevict = incoming.splice(0,i)
 				console.log("dup evict",{i, before, after: incoming.length, toevict: toevict.length,nextId:incoming[0], next:s[incoming[0]]});
 				dup.to = null;
-				dup.now = +new Date;
+				dup.now = Date.now();
 				setTimeout.each(toevict, function(id){ 
 					id && delete s[id];
 				},0,99);
