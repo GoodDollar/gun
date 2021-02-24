@@ -224,8 +224,8 @@
 						if((age || opt.age) > (Date.now() - it.was))
 							acc.expired+=1;
 						return acc;
-					},{oldest:0, totalCount:0, expired:0});
-					console.log("dup rand stats:",{randStats})
+					},{oldest:Number.MAX_SAFE_INTEGER, totalCount:0, expired:0});
+					console.log("dup rand stats:",{randStats, len: incoming.length})
 				}
 				console.log("dup evict",{age,i, before, after: incoming.length, toevict: toevict.length,nextId:incoming[0], next:s[incoming[0]]});
 				dup.to = null;
