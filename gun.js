@@ -210,8 +210,23 @@
 					var it = incoming[i] && s[incoming[i]];
 					if(i>50000) break;
 					if(it && (age || opt.age) > (Date.now() - it.was)){ break; } //everything further is newer
-				}
+				}				
 				toevict = incoming.splice(0,i)
+				if(i<50000 && incoming.length > 50000 && Math.random() < 0.1)
+				{
+					const randStats = incoming.reduce((acc,id) => {
+						var it = id && s[id];
+						if(!it)
+							return acc;
+						if(it.first<acc.oldest)
+							acc.oldest = it.first;
+						acc.totalCount += it.count;
+						if((age || opt.age) > (Date.now() - it.was))
+							acc.expired+=1;
+						return acc;
+					},{oldest:0, totalCount:0, expired:0});
+					console.log("dup rand stats:",{randStats})
+				}
 				console.log("dup evict",{age,i, before, after: incoming.length, toevict: toevict.length,nextId:incoming[0], next:s[incoming[0]]});
 				dup.to = null;
 				// dup.now = Date.now();
