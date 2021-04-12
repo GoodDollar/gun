@@ -35,7 +35,9 @@
     try{ if(SEA.window){
       if(location.protocol.indexOf('s') < 0
       && location.host.indexOf('localhost') < 0
+      && ! /^127\.\d+\.\d+\.\d+$/.test(location.hostname)
       && location.protocol.indexOf('file:') < 0){
+        console.warn('WebCrypto used by GUN SEA implementation does not work without HTTPS. Will automatically redirect.')
         location.protocol = 'https:'; // WebCrypto does NOT work without HTTPS!
       }
     } }catch(e){}
@@ -267,7 +269,7 @@
 
     SEA.work = SEA.work || (async (data, pair, cb, opt) => { try { // used to be named `proof`
       var salt = (pair||{}).epub || pair; // epub not recommended, salt should be random!
-      var opt = opt || {};
+      opt = opt || {};
       if(salt instanceof Function){
         cb = salt;
         salt = u;
@@ -507,7 +509,7 @@
 
     const importGen = async (key, salt, opt) => {
       //const combo = shim.Buffer.concat([shim.Buffer.from(key, 'utf8'), salt || shim.random(8)]).toString('utf8') // old
-      var opt = opt || {};
+      opt = opt || {};
       const combo = key + (salt || shim.random(8)).toString('utf8'); // new
       const hash = shim.Buffer.from(await sha256hash(combo), 'binary')
       
@@ -659,6 +661,82 @@
   })(USE, './secret');
 
   ;USE(function(module){
+    var SEA = USE('./root');
+    
+    // This is to certify that a group of "certificants" can "put" anything at a group of matched "paths" to the certificate authority's graph
+    SEA.certify = SEA.certify || (async (certificants, policy = {}, authority, cb, opt = {}) => { try {
+      /*
+      IMPORTANT: A Certificate is like a Signature. No one knows who (authority) created/signed a cert until you put it into their graph.
+      "certificants": '*' or a String (Bob.pub) || an Object that contains "pub" as a key || an array of [object || string]. These people will have the rights.
+      "policy": A string ('inbox'), or a RAD/LEX object {'*': 'inbox'}, or an Array of RAD/LEX objects or strings. RAD/LEX object can contain key "?" with indexOf("*") > -1 to force key equals certificant pub. This rule is used to check against soul+'/'+key using Gun.text.match or String.match.
+      "authority": Key pair or priv of the certificate authority.
+      "cb": A callback function after all things are done.
+      "opt": If opt.expiry (a timestamp) is set, SEA won't sync data after opt.expiry. If opt.blacklist is set, SEA will look for blacklist before syncing.
+      */
+      
+      console.log('SEA.certify() is an early experimental community supported method that may change API behavior without warning in any future version.')
+
+      certificants = (() => {
+        var data = []
+        if (certificants) {
+          if ((typeof certificants === 'string' || Array.isArray(certificants)) && certificants.indexOf('*') !== -1) return '*'
+          
+          if (typeof certificants === 'string') {
+            return certificants
+          }
+
+          if (Array.isArray(certificants)) {
+            if (certificants.length === 1 && certificants[0]) return typeof certificants[0] === 'object' && certificants[0].pub ? certificants[0].pub : typeof certificants[0] === 'string' ? certificants[0] : null
+            certificants.map(certificant => {
+              if (typeof certificant ==='string') data.push(certificant)
+              else if (typeof certificant === 'object' && certificant.pub) data.push(certificant.pub)
+            })
+          }
+
+          if (typeof certificants === 'object' && certificants.pub) return certificants.pub
+          
+          return data.length > 0 ? data : null
+        }
+        return null
+      })()
+
+      if (!certificants) return console.log("No certificant found.")
+
+      const expiry = opt.expiry && (typeof opt.expiry === 'number' || typeof opt.expiry === 'string') ? parseFloat(opt.expiry) : null
+      const readPolicy = (policy || {}).read ? policy.read : null
+      const writePolicy = (policy || {}).write ? policy.write : typeof policy === 'string' || Array.isArray(policy) || policy["+"] || policy["#"] || policy["."] || policy["="] || policy["*"] || policy[">"] || policy["<"] ? policy : null
+      const readBlacklist = ((opt || {}).blacklist || {}).read && (typeof opt.blacklist.read === 'string' || opt.blacklist.read['#']) ? opt.blacklist.read : null
+      const writeBlacklist = typeof (opt || {}).blacklist === 'string' || (((opt || {}).blacklist || {}).write || {})['#'] ? opt.blacklist : ((opt || {}).blacklist || {}).write && (typeof opt.blacklist.write === 'string' || opt.blacklist.write['#']) ? opt.blacklist.write : null
+
+      if (!readPolicy && !writePolicy) return console.log("No policy found.")
+
+      // reserved keys: c, e, r, w, rb, wb
+      const data = JSON.stringify({
+        c: certificants,
+        ...(expiry ? {e: expiry} : {}), // inject expiry if possible
+        ...(readPolicy ? {r: readPolicy }  : {}), // "r" stands for read, which means read permission.
+        ...(writePolicy ? {w: writePolicy} : {}), // "w" stands for write, which means write permission.
+        ...(readBlacklist ? {rb: readBlacklist} : {}), // inject READ blacklist if possible
+        ...(writeBlacklist ? {wb: writeBlacklist} : {}), // inject WRITE blacklist if possible
+      })
+
+      const certificate = await SEA.sign(data, authority, null, {raw:1})
+
+      var r = certificate
+      if(!opt.raw){ r = 'SEA'+JSON.stringify(r) }
+      if(cb){ try{ cb(r) }catch(e){console.log(e)} }
+      return r;
+    } catch(e) {
+      SEA.err = e;
+      if(SEA.throw){ throw e }
+      if(cb){ cb() }
+      return;
+    }});
+
+    module.exports = SEA.certify;
+  })(USE, './certify');
+
+  ;USE(function(module){
     var shim = USE('./shim');
     // Practical examples about usage found in tests.
     var SEA = USE('./root');
@@ -667,6 +745,7 @@
     SEA.verify = USE('./verify');
     SEA.encrypt = USE('./encrypt');
     SEA.decrypt = USE('./decrypt');
+    SEA.certify = USE('./certify');
     //SEA.opt.aeskey = USE('./aeskey'); // not official! // this causes problems in latest WebCrypto.
 
     SEA.random = SEA.random || shim.random;
@@ -1145,6 +1224,7 @@
 
   ;USE(function(module){
     var SEA = USE('./sea')
+    var S = USE('./settings')
     var Gun = SEA.Gun;
     // After we have a GUN extension to make user registration/login easy, we then need to handle everything else.
 
@@ -1225,6 +1305,7 @@
           return; // omit!
         }
       }
+      
       if('~@' === soul){  // special case for shared system data, the list of aliases.
         check.alias(eve, msg, val, key, soul, at, no); return;
       }
@@ -1257,27 +1338,92 @@
       if(key === link_is(val)){ return eve.to.next(msg) } // and the ID must be EXACTLY equal to its property
       no("Alias not same!"); // that way nobody can tamper with the list of public keys.
     };
-    check.pub = function(eve, msg, val, key, soul, at, no, user, pub){ var tmp; // Example: {_:#~asdf, hello:'world'~fdsa}}
-      if('pub' === key && '~'+pub === soul){
-        if(val === pub){ return eve.to.next(msg) } // the account MUST match `pub` property that equals the ID of the public key.
-        return no("Account not same!");
+    check.pub = function(eve, msg, val, key, soul, at, no, user, pub){ var tmp // Example: {_:#~asdf, hello:'world'~fdsa}}
+      const raw = S.parse(val) || {}
+      const verify = (certificate, certificant, cb) => {
+        if (certificate.m && certificate.s && certificant && pub)
+          // now verify certificate
+          return SEA.verify(certificate, pub, data => { // check if "pub" (of the graph owner) really issued this cert
+            if (u !== data && u !== data.e && msg.put['>'] && msg.put['>'] > parseFloat(data.e)) return no("Certificate expired.") // certificate expired
+            // "data.c" = a list of certificants/certified users
+            // "data.w" = lex WRITE permission, in the future, there will be "data.r" which means lex READ permission
+            if (u !== data && data.c && data.w && (data.c === certificant || data.c.indexOf('*' || certificant) > -1)) {
+              // ok, now "certificant" is in the "certificants" list, but is "path" allowed? Check path
+              let path = soul.indexOf('/') > -1 ? soul.replace(soul.substring(0, soul.indexOf('/') + 1), '') : ''
+              String.match = String.match || Gun.text.match
+              const w = Array.isArray(data.w) ? data.w : typeof data.w === 'object' || typeof data.w === 'string' ? [data.w] : []
+              for (const lex of w) {
+                if ((String.match(path, lex['#']) && String.match(key, lex['.'])) || (!lex['.'] && String.match(path, lex['#'])) || (!lex['#'] && String.match(key, lex['.'])) || String.match((path ? path + '/' + key : key), lex['#'] || lex)) {
+                  // is Certificant forced to present in Path
+                  if (lex['+'] && lex['+'].indexOf('*') > -1 && path && path.indexOf(certificant) == -1 && key.indexOf(certificant) == -1) return no(`Path "${path}" or key "${key}" must contain string "${certificant}".`)
+                  // path is allowed, but is there any WRITE blacklist? Check it out
+                  if (data.wb && (typeof data.wb === 'string' || ((data.wb || {})['#']))) { // "data.wb" = path to the WRITE blacklist
+                    var root = at.$.back(-1)
+                    if (typeof data.wb === 'string' && '~' !== data.wb.slice(0, 1)) root = root.get('~' + pub)
+                    return root.get(data.wb).get(certificant).once(value => {
+                      if (value && (value === 1 || value === true)) return no("Certificant blacklisted.")
+                      return cb(data)
+                    })
+                  }
+                  return cb(data)
+                }
+              }
+              return no("Certificate verification fail.")
+            }
+          })
+        return
       }
-      if((tmp = user.is) && pub === tmp.pub){
+      
+      if ('pub' === key && '~' + pub === soul) {
+        if (val === pub) return eve.to.next(msg) // the account MUST match `pub` property that equals the ID of the public key.
+        return no("Account not same!")
+      }
+
+      if ((tmp = user.is) && tmp.pub && !raw['*'] && !raw['+'] && (pub === tmp.pub || (pub !== tmp.pub && ((msg._.out || {}).opt || {}).cert))){
         SEA.sign(SEA.opt.pack(msg.put), (user._).sea, function(data){
-          if(u === data){ return no(SEA.err || 'Signature fail.') }
-          if(tmp = link_is(val)){ (at.sea.own[tmp] = at.sea.own[tmp] || {})[pub] = 1 }
-          msg.put[':'] = JSON.stringify({':': tmp = SEA.opt.unpack(data.m), '~': data.s});
-          msg.put['='] = tmp;
-          eve.to.next(msg);
-        }, {raw: 1});
+          if (u === data) return no(SEA.err || 'Signature fail.')
+          msg.put[':'] = {':': tmp = SEA.opt.unpack(data.m), '~': data.s}
+          msg.put['='] = tmp
+
+          // if writing to own graph, just allow it
+          if (pub === user.is.pub) {
+            if (tmp = link_is(val)) (at.sea.own[tmp] = at.sea.own[tmp] || {})[pub] = 1
+            msg.put[':'] = JSON.stringify(msg.put[':'])
+            return eve.to.next(msg)
+          }
+
+          // if writing to other's graph, check if cert exists then try to inject cert into put, also inject self pub so that everyone can verify the put
+          if (pub !== user.is.pub && ((msg._.out || {}).opt || {}).cert) {
+            const cert = S.parse(msg._.out.opt.cert)
+            // even if cert exists, we must verify it
+            if (cert && cert.m && cert.s)
+              verify(cert, user.is.pub, _ => {
+                msg.put[':']['+'] = cert // '+' is a certificate
+                msg.put[':']['*'] = user.is.pub // '*' is pub of the user who puts
+                msg.put[':'] = JSON.stringify(msg.put[':'])
+                return eve.to.next(msg)
+              })
+          }
+        }, {raw: 1})
         return;
       }
-      SEA.verify(SEA.opt.pack(msg.put), pub, function(data){ var tmp;
+
+      SEA.verify(SEA.opt.pack(msg.put), raw['*'] || pub, function(data){ var tmp;
         data = SEA.opt.unpack(data);
-        if(u === data){ return no("Unverified data.") } // make sure the signature matches the account it claims to be on. // reject any updates that are signed with a mismatched account.
-        if((tmp = link_is(data)) && pub === SEA.opt.pub(tmp)){ (at.sea.own[tmp] = at.sea.own[tmp] || {})[pub] = 1 }
-        msg.put['='] = data;
-        eve.to.next(msg);
+        if (u === data) return no("Unverified data.") // make sure the signature matches the account it claims to be on. // reject any updates that are signed with a mismatched account.
+        if ((tmp = link_is(data)) && pub === SEA.opt.pub(tmp)) (at.sea.own[tmp] = at.sea.own[tmp] || {})[pub] = 1
+        
+        // check if cert ('+') and putter's pub ('*') exist
+        if (raw['+'] && raw['+']['m'] && raw['+']['s'] && raw['*'])
+          // now verify certificate
+          verify(raw['+'], raw['*'], _ => {
+            msg.put['='] = data;
+            return eve.to.next(msg);
+          })
+        else {
+          msg.put['='] = data;
+          return eve.to.next(msg);
+        }
       });
     };
     check.any = function(eve, msg, val, key, soul, at, no, user){ var tmp, pub;
